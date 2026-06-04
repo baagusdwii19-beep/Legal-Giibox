@@ -567,13 +567,13 @@
   // ============================================================
   // Lihat file SETUP-FIREBASE.md untuk panduan lengkap
   const firebaseConfig = {
-    apiKey: "AIzaSyAjc-UI39iHcPT83HbePQnDF6xsnAbnXC0",
-    authDomain: "legal-be87e.firebaseapp.com",
-    databaseURL: "https://legal-be87e-default-rtdb.asia-southeast1.firebasedatabase.app",
-    projectId: "legal-be87e",
-    storageBucket: "legal-be87e.firebasestorage.app",
-    messagingSenderId: "633506843978",
-    appId: "1:633506843978:web:ba16f57e90b26392cfc5b3"
+    apiKey: "YOUR_API_KEY_HERE",
+    authDomain: "YOUR_PROJECT.firebaseapp.com",
+    databaseURL: "https://YOUR_PROJECT-default-rtdb.asia-southeast1.firebasedatabase.app",
+    projectId: "YOUR_PROJECT",
+    storageBucket: "YOUR_PROJECT.appspot.com",
+    messagingSenderId: "YOUR_SENDER_ID",
+    appId: "YOUR_APP_ID"
   };
   // ============================================================
 
@@ -776,20 +776,34 @@
   function render() {
     const all = contracts.map(c => ({...c, days: daysUntil(c.end), urgency: urgencyOf(daysUntil(c.end))}));
 
-    const urgent = all.filter(c => c.urgency === 'urgent' && c.days > -30);
-    const warn = all.filter(c => c.urgency === 'warn');
-    const safe = all.filter(c => c.urgency === 'safe');
-    const totalValue = all.reduce((sum, c) => sum + (c.value||0), 0);
+    // Stats follow the TYPE filter (Sewa / Asuransi / Vendor / NDA / Lainnya / All)
+    // but ignore the urgency chip (Critical/Soon) so user can always see breakdown
+    const statsBase = typeFilter === 'all' ? all : all.filter(c => c.type === typeFilter);
+
+    const urgent = statsBase.filter(c => c.urgency === 'urgent' && c.days > -30);
+    const warn = statsBase.filter(c => c.urgency === 'warn');
+    const safe = statsBase.filter(c => c.urgency === 'safe');
+    const totalValue = statsBase.reduce((sum, c) => sum + (c.value||0), 0);
 
     document.getElementById('stat-urgent').textContent = urgent.length;
     document.getElementById('stat-warn').textContent = warn.length;
     document.getElementById('stat-safe').textContent = safe.length;
     document.getElementById('stat-total').textContent = fmtIDR(totalValue);
+
+    // Update stat labels to show current filter context
+    const filterLabel = typeFilter === 'all' ? 'All contracts' : typeFilter;
+    document.querySelectorAll('.stat-detail').forEach((el, i) => {
+      if (i === 0) el.textContent = `${filterLabel} · immediate`;
+      else if (i === 1) el.textContent = `${filterLabel} · renewal`;
+      else if (i === 2) el.textContent = `${filterLabel} · on track`;
+      else if (i === 3) el.textContent = `${filterLabel}`;
+    });
+
     document.getElementById('greetSub').textContent =
       contracts.length === 0 ? 'Add your first contract to get started.' :
-      urgent.length > 0 ? `${urgent.length} contract${urgent.length>1?'s':''} need immediate attention.` :
-      warn.length > 0 ? `${warn.length} contract${warn.length>1?'s':''} expiring soon.` :
-      'All contracts on track.';
+      urgent.length > 0 ? `${urgent.length} ${typeFilter === 'all' ? '' : typeFilter + ' '}contract${urgent.length>1?'s':''} need immediate attention.` :
+      warn.length > 0 ? `${warn.length} ${typeFilter === 'all' ? '' : typeFilter + ' '}contract${warn.length>1?'s':''} expiring soon.` :
+      `All ${typeFilter === 'all' ? '' : typeFilter + ' '}contracts on track.`;
 
     const search = document.getElementById('searchInput').value.toLowerCase();
     let filtered = all;
