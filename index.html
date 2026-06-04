@@ -1,0 +1,1110 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>GII-BOX — Contract Reminder</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter+Tight:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --bg: #f6f4ef;
+    --bg-card: #ffffff;
+    --ink: #1a1a1a;
+    --ink-soft: #5a5a5a;
+    --ink-faint: #9a9a9a;
+    --line: #e8e4da;
+    --accent: #8b2e2e;
+    --warning: #c47b2a;
+    --danger: #b03030;
+    --safe: #4a6b3a;
+    --highlight: #f0ebe0;
+  }
+
+  html, body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: 'Inter Tight', sans-serif;
+    font-size: 15px;
+    line-height: 1.5;
+    min-height: 100vh;
+  }
+
+  .display { font-family: 'Fraunces', serif; font-weight: 500; letter-spacing: -0.01em; }
+
+  /* ===== TOP BAR ===== */
+  .topbar {
+    background: var(--bg-card);
+    border-bottom: 1px solid var(--line);
+    padding: 14px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    position: sticky;
+    top: 0;
+    z-index: 50;
+  }
+  .brand { display: flex; align-items: center; gap: 10px; }
+  .brand-mark {
+    width: 32px; height: 32px;
+    background: var(--accent); color: #fff;
+    display: grid; place-items: center;
+    font-family: 'Fraunces'; font-weight: 700; font-size: 16px;
+    border-radius: 6px;
+  }
+  .brand-name { font-family: 'Fraunces'; font-size: 18px; font-weight: 600; letter-spacing: 0.02em; }
+
+  .topbar-actions { display: flex; align-items: center; gap: 10px; }
+
+  .sync-status { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--ink-soft); }
+  .sync-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--safe); }
+  .sync-dot.syncing { background: var(--warning); animation: pulse 1s infinite; }
+  .sync-dot.offline { background: var(--danger); }
+  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
+
+  .user-pill {
+    display: flex; align-items: center; gap: 8px;
+    padding: 6px 12px 6px 6px;
+    background: var(--bg); border: 1px solid var(--line);
+    border-radius: 100px; cursor: pointer; font-size: 13px;
+  }
+  .user-pill:hover { background: var(--highlight); }
+  .user-pill .avatar {
+    width: 26px; height: 26px; border-radius: 50%;
+    background: var(--accent); color: #fff;
+    display: grid; place-items: center;
+    font-size: 11px; font-weight: 600;
+  }
+
+  /* ===== CONTAINER ===== */
+  .container { max-width: 1200px; margin: 0 auto; padding: 28px 24px 60px; }
+
+  /* ===== HEADER ===== */
+  .page-head { margin-bottom: 28px; }
+  .page-title { font-family: 'Fraunces'; font-size: 32px; line-height: 1.1; }
+  .page-subtitle { color: var(--ink-soft); font-size: 14px; margin-top: 6px; }
+
+  /* ===== NOTIF BANNER ===== */
+  .notif-banner {
+    margin-bottom: 20px;
+    padding: 14px 18px;
+    background: linear-gradient(135deg, #f0ebe0, #e8e2d0);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    display: flex; align-items: center; gap: 14px;
+    cursor: pointer;
+  }
+  .notif-banner.hidden { display: none; }
+  .notif-icon {
+    width: 36px; height: 36px;
+    background: var(--ink); color: var(--bg);
+    border-radius: 50%;
+    display: grid; place-items: center;
+    font-size: 16px; flex-shrink: 0;
+  }
+  .notif-text { flex: 1; }
+  .notif-text strong { display: block; font-size: 14px; }
+  .notif-text small { font-size: 12px; color: var(--ink-soft); }
+  .notif-close { background: none; border: none; font-size: 18px; color: var(--ink-soft); cursor: pointer; padding: 4px 8px; }
+
+  /* Config error banner */
+  .config-banner {
+    margin: 20px 24px 0;
+    padding: 16px 20px;
+    background: #fef3e7;
+    border: 1px solid #d4a574;
+    border-radius: 8px;
+    color: #6b4422;
+  }
+  .config-banner strong { display: block; margin-bottom: 4px; }
+  .config-banner small { font-size: 12px; }
+
+  /* ===== STATS ===== */
+  .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 28px; }
+  .stat {
+    background: var(--bg-card); border: 1px solid var(--line); border-radius: 8px;
+    padding: 18px 20px; position: relative; overflow: hidden;
+  }
+  .stat::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: var(--ink-faint); }
+  .stat.urgent::before { background: var(--danger); }
+  .stat.warn::before { background: var(--warning); }
+  .stat.safe::before { background: var(--safe); }
+  .stat-label { font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-soft); }
+  .stat-value { font-family: 'Fraunces'; font-size: 36px; line-height: 1; margin-top: 6px; }
+  .stat.urgent .stat-value { color: var(--danger); }
+  .stat.warn .stat-value { color: var(--warning); }
+  .stat.safe .stat-value { color: var(--safe); }
+  .stat-detail { font-size: 12px; color: var(--ink-faint); margin-top: 4px; }
+
+  /* ===== TOOLBAR ===== */
+  .toolbar { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; flex-wrap: wrap; }
+  .section-title { font-family: 'Fraunces'; font-size: 22px; margin-right: auto; }
+  .search-input {
+    padding: 9px 14px; border: 1px solid var(--line); border-radius: 6px;
+    background: var(--bg-card); font-family: inherit; font-size: 13px; width: 220px;
+  }
+  .search-input:focus { outline: none; border-color: var(--ink); }
+
+  .btn {
+    padding: 9px 16px; border: 1px solid var(--ink);
+    background: transparent; color: var(--ink);
+    font-family: inherit; font-size: 13px; font-weight: 500;
+    cursor: pointer; border-radius: 6px; transition: all 0.15s;
+    display: inline-flex; align-items: center; gap: 6px; white-space: nowrap;
+  }
+  .btn:hover { background: var(--ink); color: var(--bg); }
+  .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  .btn-primary { background: var(--ink); color: var(--bg); }
+  .btn-primary:hover { background: var(--accent); border-color: var(--accent); }
+  .btn-ghost { border-color: var(--line); background: var(--bg-card); }
+  .btn-ghost:hover { background: var(--highlight); color: var(--ink); border-color: var(--ink); }
+  .btn-danger { border-color: var(--danger); color: var(--danger); }
+  .btn-danger:hover { background: var(--danger); color: #fff; }
+
+  /* ===== CHIPS ===== */
+  .chips { display: flex; gap: 6px; margin-bottom: 16px; flex-wrap: wrap; }
+  .chip {
+    padding: 6px 13px; border: 1px solid var(--line); background: var(--bg-card);
+    border-radius: 100px; font-size: 12px; font-weight: 500; cursor: pointer; white-space: nowrap;
+  }
+  .chip:hover { border-color: var(--ink); }
+  .chip.active { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+
+  /* ===== TABLE ===== */
+  .table-wrap { background: var(--bg-card); border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+  .table-row {
+    display: grid;
+    grid-template-columns: 32px 2.2fr 1fr 1.4fr 1fr 0.9fr 80px;
+    align-items: center; gap: 16px; padding: 14px 20px;
+    border-bottom: 1px solid var(--line); cursor: pointer; transition: background 0.12s;
+  }
+  .table-row:last-child { border-bottom: none; }
+  .table-row:hover { background: var(--highlight); }
+  .table-row.header {
+    background: #fafaf6; font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase;
+    color: var(--ink-soft); cursor: default; padding-top: 11px; padding-bottom: 11px; font-weight: 600;
+  }
+  .table-row.header:hover { background: #fafaf6; }
+
+  .urgency-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--ink-faint); }
+  .urgency-dot.urgent { background: var(--danger); box-shadow: 0 0 0 4px rgba(176,48,48,0.15); }
+  .urgency-dot.warn { background: var(--warning); box-shadow: 0 0 0 4px rgba(196,123,42,0.15); }
+  .urgency-dot.safe { background: var(--safe); }
+
+  .cell-name { font-weight: 600; font-size: 14px; }
+  .cell-sub { font-size: 12px; color: var(--ink-faint); margin-top: 2px; }
+  .type-tag {
+    display: inline-block; padding: 3px 9px; border-radius: 4px;
+    font-size: 11px; background: var(--highlight); color: var(--ink-soft); font-weight: 500;
+  }
+  .days-cell { font-family: 'Fraunces'; font-size: 18px; line-height: 1; }
+  .days-cell small {
+    display: block; font-family: 'Inter Tight'; font-size: 10px;
+    color: var(--ink-faint); letter-spacing: 0.06em; text-transform: uppercase; margin-top: 3px;
+  }
+  .days-cell.urgent { color: var(--danger); }
+  .days-cell.warn { color: var(--warning); }
+
+  .owner-cell { display: flex; align-items: center; gap: 8px; }
+  .mini-avatar {
+    width: 24px; height: 24px; border-radius: 50%;
+    background: var(--ink); color: var(--bg);
+    display: grid; place-items: center; font-size: 10px; font-weight: 600;
+  }
+  .action-link { font-size: 12px; color: var(--accent); text-decoration: none; font-weight: 500; cursor: pointer; }
+  .action-link:hover { text-decoration: underline; }
+
+  /* ===== EMPTY ===== */
+  .empty { padding: 60px 20px; text-align: center; color: var(--ink-faint); }
+  .empty .display { font-size: 22px; color: var(--ink-soft); margin-bottom: 8px; }
+  .empty p { font-size: 14px; }
+  .empty .btn { margin-top: 16px; }
+
+  /* ===== MODAL ===== */
+  .modal-overlay {
+    position: fixed; inset: 0; background: rgba(20,20,20,0.5);
+    display: none; align-items: center; justify-content: center;
+    z-index: 100; padding: 20px;
+  }
+  .modal-overlay.show { display: flex; }
+  .modal {
+    background: var(--bg-card); border-radius: 10px;
+    width: 100%; max-width: 580px; max-height: 90vh; overflow-y: auto;
+  }
+  .modal-head { padding: 24px 28px 16px; border-bottom: 1px solid var(--line); }
+  .modal-head h2 { font-family: 'Fraunces'; font-size: 22px; }
+  .modal-subtitle { color: var(--ink-soft); font-size: 13px; margin-top: 4px; }
+  .modal-body { padding: 20px 28px; }
+  .modal-actions { display: flex; gap: 10px; justify-content: flex-end; padding: 16px 28px; border-top: 1px solid var(--line); }
+
+  .field { margin-bottom: 14px; }
+  .field label {
+    display: block; font-size: 11px; letter-spacing: 0.12em;
+    text-transform: uppercase; color: var(--ink-soft); margin-bottom: 6px;
+  }
+  .field input, .field select, .field textarea {
+    width: 100%; padding: 10px 12px; border: 1px solid var(--line);
+    border-radius: 6px; font-family: inherit; font-size: 14px; background: var(--bg);
+  }
+  .field input:focus, .field select:focus, .field textarea:focus { outline: none; border-color: var(--ink); }
+  .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+  /* ===== DETAIL ===== */
+  .detail-section { padding: 16px 28px; border-bottom: 1px solid var(--line); }
+  .detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px 20px; }
+  .detail-item label { font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-faint); }
+  .detail-item p { font-size: 14px; margin-top: 3px; font-weight: 500; }
+  .audit { font-size: 11px; color: var(--ink-faint); margin-top: 6px; }
+
+  /* ===== LOGIN ===== */
+  .login-screen { min-height: 100vh; display: grid; place-items: center; background: var(--bg); padding: 20px; }
+  .login-card {
+    background: var(--bg-card); padding: 36px 32px; border-radius: 10px;
+    border: 1px solid var(--line); width: 100%; max-width: 400px;
+  }
+  .login-brand { display: flex; align-items: center; gap: 12px; margin-bottom: 22px; }
+  .login-mark {
+    width: 44px; height: 44px;
+    background: var(--accent); color: #fff;
+    display: grid; place-items: center;
+    font-family: 'Fraunces'; font-size: 22px; font-weight: 700;
+    border-radius: 8px;
+  }
+  .login-card h1 { font-family: 'Fraunces'; font-size: 26px; line-height: 1.1; }
+  .login-card .subtitle { color: var(--ink-soft); font-size: 13px; margin-top: 4px; }
+  .login-tip { font-size: 11px; color: var(--ink-faint); text-align: center; margin-top: 14px; }
+
+  /* ===== TOAST ===== */
+  .toast {
+    position: fixed; bottom: 24px; left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: var(--ink); color: var(--bg);
+    padding: 12px 20px; border-radius: 8px;
+    font-size: 13px; opacity: 0; pointer-events: none;
+    transition: all 0.25s; z-index: 200;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  /* ===== USER MENU ===== */
+  .user-menu {
+    position: absolute; top: 60px; right: 24px;
+    background: var(--bg-card); border: 1px solid var(--line);
+    border-radius: 8px; padding: 8px; min-width: 220px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+    z-index: 60; display: none;
+  }
+  .user-menu.show { display: block; }
+  .menu-info { padding: 10px 12px; border-bottom: 1px solid var(--line); margin-bottom: 6px; }
+  .menu-info strong { display: block; font-size: 14px; }
+  .menu-info small { font-size: 12px; color: var(--ink-soft); }
+  .menu-item { padding: 9px 12px; border-radius: 5px; font-size: 13px; cursor: pointer; color: var(--ink); }
+  .menu-item:hover { background: var(--highlight); }
+  .menu-item.danger { color: var(--danger); }
+
+  /* ===== RESPONSIVE ===== */
+  @media (max-width: 768px) {
+    .topbar { padding: 12px 16px; }
+    .container { padding: 20px 16px 80px; }
+    .page-title { font-size: 24px; }
+    .stats { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+    .stat { padding: 14px 16px; }
+    .stat-value { font-size: 28px; }
+    .toolbar { gap: 8px; }
+    .search-input { width: 100%; flex: 1; min-width: 140px; }
+    .section-title { width: 100%; margin-bottom: 4px; }
+    .table-row { grid-template-columns: 24px 1fr auto; gap: 10px; padding: 14px; }
+    .table-row.header { display: none; }
+    .table-row .col-type, .table-row .col-end, .table-row .col-owner, .table-row .col-action { display: none; }
+    .modal { max-height: 95vh; }
+    .field-row { grid-template-columns: 1fr; gap: 0; }
+    .detail-grid { grid-template-columns: 1fr; }
+    .modal-head, .modal-body, .modal-actions, .detail-section { padding-left: 20px; padding-right: 20px; }
+    .sync-status { display: none; }
+  }
+  @media (max-width: 480px) {
+    .modal-actions { flex-wrap: wrap; }
+    .modal-actions .btn { flex: 1; min-width: 100px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- CONFIG WARNING (if firebase not configured) -->
+<div id="configBanner" class="config-banner" style="display:none;">
+  <strong>⚠ Firebase belum dikonfigurasi</strong>
+  <small>Edit file ini, cari komentar <code>// FIREBASE CONFIG</code> di bagian script, lalu ganti dengan config dari Firebase Console. Lihat panduan di file SETUP-FIREBASE.md</small>
+</div>
+
+<!-- LOGIN -->
+<div class="login-screen" id="loginScreen" style="display:none;">
+  <div class="login-card">
+    <div class="login-brand">
+      <div class="login-mark">G</div>
+      <div>
+        <h1>GII-BOX</h1>
+        <p class="subtitle">Contract management</p>
+      </div>
+    </div>
+    <div class="field">
+      <label>Your Name</label>
+      <input type="text" id="loginName" placeholder="e.g. Bagus Pratama" />
+    </div>
+    <div class="field">
+      <label>Role</label>
+      <select id="loginRole">
+        <option value="Legal">Legal Counsel</option>
+        <option value="Admin">Admin / Manager</option>
+        <option value="Staff">Staff</option>
+      </select>
+    </div>
+    <button class="btn btn-primary" style="width:100%; justify-content:center; margin-top:8px; padding:12px;" onclick="login()">Sign In</button>
+    <p class="login-tip">Synced live with Firebase for all team members</p>
+  </div>
+</div>
+
+<!-- MAIN -->
+<div id="appView" style="display:none;">
+
+  <div class="topbar">
+    <div class="brand">
+      <div class="brand-mark">G</div>
+      <div class="brand-name">GII-BOX</div>
+    </div>
+    <div class="topbar-actions">
+      <div class="sync-status">
+        <div class="sync-dot" id="syncDot"></div>
+        <span id="syncText">Connecting…</span>
+      </div>
+      <div class="user-pill" onclick="toggleUserMenu(event)">
+        <div class="avatar" id="userInitial">?</div>
+        <span id="userName">User</span>
+      </div>
+    </div>
+    <div class="user-menu" id="userMenu">
+      <div class="menu-info">
+        <strong id="menuName">—</strong>
+        <small id="menuRole">—</small>
+      </div>
+      <div class="menu-item" onclick="testNotification()">🔔 Test notification</div>
+      <div class="menu-item" onclick="exportAllToCalendar()">📅 Export all to Calendar</div>
+      <div class="menu-item danger" onclick="signOut()">Sign out</div>
+    </div>
+  </div>
+
+  <div class="container">
+
+    <div class="page-head">
+      <h1 class="page-title">Good day, <span id="greetName">there</span></h1>
+      <p class="page-subtitle" id="greetSub">Manage all your team's contracts in one place.</p>
+    </div>
+
+    <div class="notif-banner" id="notifBanner" onclick="enableNotifications()">
+      <div class="notif-icon">🔔</div>
+      <div class="notif-text">
+        <strong>Enable browser notifications</strong>
+        <small>Get alerted when contracts are 30 days from expiring</small>
+      </div>
+      <button class="notif-close" onclick="event.stopPropagation(); dismissNotifBanner();">×</button>
+    </div>
+
+    <div class="stats">
+      <div class="stat urgent">
+        <div class="stat-label">Critical · ≤30 days</div>
+        <div class="stat-value" id="stat-urgent">0</div>
+        <div class="stat-detail">Immediate action</div>
+      </div>
+      <div class="stat warn">
+        <div class="stat-label">Soon · ≤90 days</div>
+        <div class="stat-value" id="stat-warn">0</div>
+        <div class="stat-detail">Plan renewal</div>
+      </div>
+      <div class="stat safe">
+        <div class="stat-label">Active</div>
+        <div class="stat-value" id="stat-safe">0</div>
+        <div class="stat-detail">On track</div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">Total value</div>
+        <div class="stat-value" id="stat-total">—</div>
+        <div class="stat-detail">All contracts</div>
+      </div>
+    </div>
+
+    <div class="toolbar">
+      <h2 class="section-title">Contracts</h2>
+      <input type="text" class="search-input" id="searchInput" placeholder="Search..." oninput="render()" />
+      <button class="btn btn-primary" onclick="openModal()">+ New Contract</button>
+    </div>
+
+    <div class="chips">
+      <div class="chip active" data-filter="all" onclick="filterChip(this,'all')">All</div>
+      <div class="chip" data-filter="Sewa" onclick="filterChip(this,'Sewa')">Sewa</div>
+      <div class="chip" data-filter="Asuransi" onclick="filterChip(this,'Asuransi')">Asuransi</div>
+      <div class="chip" data-filter="Vendor" onclick="filterChip(this,'Vendor')">Vendor</div>
+      <div class="chip" data-filter="NDA" onclick="filterChip(this,'NDA')">NDA</div>
+      <div class="chip" data-filter="Lainnya" onclick="filterChip(this,'Lainnya')">Lainnya</div>
+      <div style="flex:1"></div>
+      <div class="chip active" data-urgency="all" onclick="filterUrgency(this,'all')">All Status</div>
+      <div class="chip" data-urgency="urgent" onclick="filterUrgency(this,'urgent')">🔴 Critical</div>
+      <div class="chip" data-urgency="warn" onclick="filterUrgency(this,'warn')">🟠 Soon</div>
+    </div>
+
+    <div class="table-wrap" id="tableWrap"></div>
+
+  </div>
+</div>
+
+<!-- MODAL: Add/Edit -->
+<div class="modal-overlay" id="formModal" onclick="if(event.target===this)closeModal()">
+  <div class="modal">
+    <div class="modal-head">
+      <h2 id="modalTitle">New Contract</h2>
+      <p class="modal-subtitle">Synced live with Firebase. All team members will see changes immediately.</p>
+    </div>
+    <div class="modal-body">
+      <div class="field">
+        <label>Contract Name *</label>
+        <input type="text" id="f-name" placeholder="e.g. Sewa Gudang Cikarang Blok B" />
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label>Type</label>
+          <select id="f-type">
+            <option>Sewa</option>
+            <option>Asuransi</option>
+            <option>Vendor</option>
+            <option>NDA</option>
+            <option>Lainnya</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Owner</label>
+          <input type="text" id="f-assignee" placeholder="Bagus" />
+        </div>
+      </div>
+      <div class="field">
+        <label>Counterparty</label>
+        <input type="text" id="f-vendor" placeholder="e.g. PT Mitra Logistik" />
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label>Start Date</label>
+          <input type="date" id="f-start" />
+        </div>
+        <div class="field">
+          <label>End Date *</label>
+          <input type="date" id="f-end" />
+        </div>
+      </div>
+      <div class="field">
+        <label>Value (IDR)</label>
+        <input type="number" id="f-value" placeholder="0" inputmode="numeric" />
+      </div>
+      <div class="field">
+        <label>Notes</label>
+        <textarea id="f-notes" rows="3" placeholder="Optional notes"></textarea>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-danger" id="deleteBtn" onclick="deleteContract()" style="display:none;">Delete</button>
+      <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-primary" id="saveBtn" onclick="saveContract()">Save Contract</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Detail -->
+<div class="modal-overlay" id="detailModal" onclick="if(event.target===this)closeDetail()">
+  <div class="modal">
+    <div class="modal-head">
+      <h2 id="d-name">—</h2>
+      <p class="modal-subtitle" id="d-vendor">—</p>
+    </div>
+    <div class="detail-section">
+      <div class="detail-grid">
+        <div class="detail-item"><label>Type</label><p id="d-type">—</p></div>
+        <div class="detail-item"><label>Owner</label><p id="d-owner">—</p></div>
+        <div class="detail-item"><label>Start Date</label><p id="d-start">—</p></div>
+        <div class="detail-item"><label>End Date</label><p id="d-end">—</p></div>
+        <div class="detail-item"><label>Days Remaining</label><p id="d-days">—</p></div>
+        <div class="detail-item"><label>Value</label><p id="d-value">—</p></div>
+      </div>
+    </div>
+    <div class="detail-section" id="d-notes-section">
+      <div class="detail-item">
+        <label>Notes</label>
+        <p id="d-notes" style="font-weight:400;">—</p>
+      </div>
+    </div>
+    <div class="detail-section">
+      <div class="detail-item">
+        <label>Audit</label>
+        <p class="audit" id="d-audit" style="font-weight:400;">—</p>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeDetail()">Close</button>
+      <button class="btn btn-ghost" onclick="editFromDetail()">Edit</button>
+      <button class="btn btn-primary" onclick="addToCalendarFromDetail()">📅 Add to Calendar</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- Firebase SDKs -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import { getDatabase, ref, onValue, set, push, remove, update } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+
+  // ============================================================
+  // FIREBASE CONFIG — GANTI DENGAN CONFIG DARI FIREBASE CONSOLE
+  // ============================================================
+  // Lihat file SETUP-FIREBASE.md untuk panduan lengkap
+  const firebaseConfig = {
+    apiKey: "AIzaSyAjc-UI39iHcPT83HbePQnDF6xsnAbnXC0",
+    authDomain: "legal-be87e.firebaseapp.com",
+    databaseURL: "https://legal-be87e-default-rtdb.asia-southeast1.firebasedatabase.app",
+    projectId: "legal-be87e",
+    storageBucket: "legal-be87e.firebasestorage.app",
+    messagingSenderId: "633506843978",
+    appId: "1:633506843978:web:ba16f57e90b26392cfc5b3"
+  };
+  // ============================================================
+
+  // Check if config is filled
+  const isConfigured = firebaseConfig.apiKey !== "YOUR_API_KEY_HERE" && firebaseConfig.apiKey.length > 10;
+
+  let db = null;
+  let contractsRef = null;
+
+  if (isConfigured) {
+    try {
+      const app = initializeApp(firebaseConfig);
+      db = getDatabase(app);
+      contractsRef = ref(db, 'contracts');
+    } catch(e) {
+      console.error('Firebase init error:', e);
+      showConfigBanner('Firebase config error: ' + e.message);
+    }
+  } else {
+    showConfigBanner();
+  }
+
+  function showConfigBanner(msg) {
+    const b = document.getElementById('configBanner');
+    b.style.display = 'block';
+    if (msg) b.querySelector('small').textContent = msg;
+  }
+
+  // Expose firebase helpers to window for use by main script
+  window.fb = {
+    db, contractsRef, isConfigured,
+    onValue, ref, set, push, remove, update
+  };
+
+  // Signal that firebase module is ready
+  window.dispatchEvent(new Event('firebase-ready'));
+</script>
+
+<!-- Main app logic -->
+<script>
+  // ========== STATE ==========
+  let contracts = [];
+  let currentUser = null;
+  let editingId = null;
+  let currentDetailId = null;
+  let typeFilter = 'all';
+  let urgencyFilter = 'all';
+  let notifiedIds = new Set();
+  let bannerDismissed = false;
+  let dataLoaded = false;
+
+  // ========== LOCAL STORAGE (for user session & notif state only) ==========
+  function lsGet(key) {
+    try { return JSON.parse(localStorage.getItem('giibox_' + key)); } catch(e) { return null; }
+  }
+  function lsSet(key, val) {
+    try { localStorage.setItem('giibox_' + key, JSON.stringify(val)); } catch(e){}
+  }
+
+  // ========== FIREBASE ==========
+  function initFirebase() {
+    if (!window.fb || !window.fb.isConfigured) {
+      setSync('offline', 'Firebase not configured');
+      // Show empty state anyway so UI loads
+      dataLoaded = true;
+      render();
+      return;
+    }
+
+    setSync('syncing', 'Connecting…');
+
+    // Live listener — auto-update when anyone changes data
+    window.fb.onValue(window.fb.contractsRef, (snapshot) => {
+      const data = snapshot.val();
+      contracts = data ? Object.entries(data).map(([id, val]) => ({ id, ...val })) : [];
+      dataLoaded = true;
+      setSync('saved');
+      render();
+      checkAndFireNotifications();
+    }, (error) => {
+      console.error('Firebase read error:', error);
+      setSync('offline', 'Connection error');
+    });
+  }
+
+  async function saveContractToFirebase(data, id) {
+    if (!window.fb || !window.fb.isConfigured) { toast('Firebase not configured'); return; }
+    setSync('syncing', 'Saving…');
+    try {
+      if (id) {
+        // Update existing
+        await window.fb.update(window.fb.ref(window.fb.db, 'contracts/' + id), data);
+      } else {
+        // Push new
+        await window.fb.push(window.fb.contractsRef, data);
+      }
+      // setSync('saved') will be triggered by onValue listener
+    } catch(e) {
+      console.error(e);
+      setSync('offline', 'Save failed');
+      toast('Save failed: ' + e.message);
+    }
+  }
+
+  async function deleteContractFromFirebase(id) {
+    if (!window.fb || !window.fb.isConfigured) return;
+    setSync('syncing', 'Deleting…');
+    try {
+      await window.fb.remove(window.fb.ref(window.fb.db, 'contracts/' + id));
+    } catch(e) {
+      console.error(e);
+      setSync('offline', 'Delete failed');
+      toast('Delete failed: ' + e.message);
+    }
+  }
+
+  // ========== SYNC STATUS ==========
+  function setSync(state, msg) {
+    const dot = document.getElementById('syncDot');
+    const text = document.getElementById('syncText');
+    if (!dot || !text) return;
+    dot.classList.remove('syncing', 'offline');
+    if (state === 'syncing') {
+      dot.classList.add('syncing');
+      text.textContent = msg || 'Saving…';
+    } else if (state === 'saved') {
+      text.textContent = msg || 'Synced live';
+    } else if (state === 'offline') {
+      dot.classList.add('offline');
+      text.textContent = msg || 'Offline';
+    }
+  }
+
+  // ========== HELPERS ==========
+  function daysUntil(dateStr) {
+    if (!dateStr) return 9999;
+    const t = new Date(); t.setHours(0,0,0,0);
+    const x = new Date(dateStr);
+    return Math.ceil((x - t) / 86400000);
+  }
+  function urgencyOf(d) { return d <= 30 ? 'urgent' : d <= 90 ? 'warn' : 'safe'; }
+  function fmtIDR(n) {
+    if (!n) return '—';
+    if (n >= 1e9) return 'Rp ' + (n/1e9).toFixed(1) + 'M';
+    if (n >= 1e6) return 'Rp ' + (n/1e6).toFixed(0) + 'jt';
+    return 'Rp ' + n.toLocaleString('id-ID');
+  }
+  function fmtDate(s) {
+    if (!s) return '—';
+    return new Date(s).toLocaleDateString('id-ID', { day:'numeric', month:'short', year:'numeric' });
+  }
+  function fmtDateTime(s) {
+    if (!s) return '—';
+    return new Date(s).toLocaleString('id-ID', { day:'numeric', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' });
+  }
+  function esc(s) { return (s||'').replace(/[&<>"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[m]); }
+
+  // ========== LOGIN ==========
+  function login() {
+    const name = document.getElementById('loginName').value.trim();
+    const role = document.getElementById('loginRole').value;
+    if (!name) { toast('Please enter your name'); return; }
+    currentUser = { name, role };
+    lsSet('user', currentUser);
+    showApp();
+  }
+  function signOut() {
+    if (!confirm('Sign out?')) return;
+    currentUser = null;
+    lsSet('user', null);
+    document.getElementById('appView').style.display = 'none';
+    document.getElementById('loginScreen').style.display = 'grid';
+    document.getElementById('userMenu').classList.remove('show');
+  }
+  function showApp() {
+    document.getElementById('loginScreen').style.display = 'none';
+    document.getElementById('appView').style.display = 'block';
+    const firstName = currentUser.name.split(' ')[0];
+    document.getElementById('greetName').textContent = firstName;
+    document.getElementById('userName').textContent = firstName;
+    document.getElementById('userInitial').textContent = currentUser.name[0].toUpperCase();
+    document.getElementById('menuName').textContent = currentUser.name;
+    document.getElementById('menuRole').textContent = currentUser.role;
+
+    if ('Notification' in window && (Notification.permission === 'granted' || bannerDismissed)) {
+      document.getElementById('notifBanner').classList.add('hidden');
+    }
+    initFirebase();
+  }
+
+  function toggleUserMenu(e) {
+    e.stopPropagation();
+    document.getElementById('userMenu').classList.toggle('show');
+  }
+  document.addEventListener('click', () => {
+    document.getElementById('userMenu')?.classList.remove('show');
+  });
+
+  // ========== RENDER ==========
+  function render() {
+    const all = contracts.map(c => ({...c, days: daysUntil(c.end), urgency: urgencyOf(daysUntil(c.end))}));
+
+    const urgent = all.filter(c => c.urgency === 'urgent' && c.days > -30);
+    const warn = all.filter(c => c.urgency === 'warn');
+    const safe = all.filter(c => c.urgency === 'safe');
+    const totalValue = all.reduce((sum, c) => sum + (c.value||0), 0);
+
+    document.getElementById('stat-urgent').textContent = urgent.length;
+    document.getElementById('stat-warn').textContent = warn.length;
+    document.getElementById('stat-safe').textContent = safe.length;
+    document.getElementById('stat-total').textContent = fmtIDR(totalValue);
+    document.getElementById('greetSub').textContent =
+      contracts.length === 0 ? 'Add your first contract to get started.' :
+      urgent.length > 0 ? `${urgent.length} contract${urgent.length>1?'s':''} need immediate attention.` :
+      warn.length > 0 ? `${warn.length} contract${warn.length>1?'s':''} expiring soon.` :
+      'All contracts on track.';
+
+    const search = document.getElementById('searchInput').value.toLowerCase();
+    let filtered = all;
+    if (typeFilter !== 'all') filtered = filtered.filter(c => c.type === typeFilter);
+    if (urgencyFilter !== 'all') filtered = filtered.filter(c => c.urgency === urgencyFilter);
+    if (search) filtered = filtered.filter(c =>
+      ((c.name||'') + ' ' + (c.vendor||'') + ' ' + (c.assignee||'')).toLowerCase().includes(search)
+    );
+    filtered.sort((a, b) => a.days - b.days);
+
+    const wrap = document.getElementById('tableWrap');
+    if (!dataLoaded) {
+      wrap.innerHTML = '<div class="empty"><div class="display">Loading…</div><p>Connecting to Firebase</p></div>';
+      return;
+    }
+    if (contracts.length === 0) {
+      wrap.innerHTML = `
+        <div class="empty">
+          <div class="display">No contracts yet</div>
+          <p>Click "New Contract" to add your first one. All your team will see it instantly.</p>
+          <button class="btn btn-primary" onclick="openModal()">+ New Contract</button>
+        </div>`;
+      return;
+    }
+    if (filtered.length === 0) {
+      wrap.innerHTML = '<div class="empty"><div class="display">No matches</div><p>Try adjusting your filters or search.</p></div>';
+      return;
+    }
+
+    let html = `
+      <div class="table-row header">
+        <div></div>
+        <div>Contract</div>
+        <div class="col-type">Type</div>
+        <div class="col-end">Expires</div>
+        <div>Time Left</div>
+        <div class="col-owner">Owner</div>
+        <div class="col-action">Action</div>
+      </div>`;
+
+    filtered.forEach(c => {
+      const daysLabel = c.days < 0 ? `${Math.abs(c.days)}d` : c.days === 0 ? 'Today' : `${c.days}d`;
+      const daysSub = c.days < 0 ? 'expired' : c.days === 0 ? 'today' : 'left';
+      html += `
+        <div class="table-row" onclick="openDetail('${c.id}')">
+          <div><div class="urgency-dot ${c.urgency}"></div></div>
+          <div>
+            <div class="cell-name">${esc(c.name)}</div>
+            <div class="cell-sub">${esc(c.vendor || '—')} · ${fmtIDR(c.value)}</div>
+          </div>
+          <div class="col-type"><span class="type-tag">${c.type}</span></div>
+          <div class="col-end" style="font-size:13px; color:var(--ink-soft);">${fmtDate(c.end)}</div>
+          <div>
+            <div class="days-cell ${c.urgency}">
+              ${daysLabel}
+              <small>${daysSub}</small>
+            </div>
+          </div>
+          <div class="col-owner">
+            <div class="owner-cell">
+              <div class="mini-avatar">${c.assignee ? c.assignee[0].toUpperCase() : '?'}</div>
+              <span style="font-size:13px;">${esc(c.assignee || '—')}</span>
+            </div>
+          </div>
+          <div class="col-action">
+            <span class="action-link" onclick="event.stopPropagation(); addToCalendar('${c.id}')">+ Calendar</span>
+          </div>
+        </div>`;
+    });
+    wrap.innerHTML = html;
+  }
+
+  // ========== FILTERS ==========
+  function filterChip(el, f) {
+    document.querySelectorAll('.chip[data-filter]').forEach(c => c.classList.remove('active'));
+    el.classList.add('active');
+    typeFilter = f;
+    render();
+  }
+  function filterUrgency(el, u) {
+    document.querySelectorAll('.chip[data-urgency]').forEach(c => c.classList.remove('active'));
+    el.classList.add('active');
+    urgencyFilter = u;
+    render();
+  }
+
+  // ========== MODAL ==========
+  function openModal(id) {
+    editingId = id || null;
+    document.getElementById('modalTitle').textContent = id ? 'Edit Contract' : 'New Contract';
+    document.getElementById('deleteBtn').style.display = id ? 'inline-flex' : 'none';
+    if (id) {
+      const c = contracts.find(x => x.id === id);
+      if (!c) return;
+      document.getElementById('f-name').value = c.name || '';
+      document.getElementById('f-type').value = c.type || 'Sewa';
+      document.getElementById('f-vendor').value = c.vendor || '';
+      document.getElementById('f-start').value = c.start || '';
+      document.getElementById('f-end').value = c.end || '';
+      document.getElementById('f-value').value = c.value || '';
+      document.getElementById('f-assignee').value = c.assignee || '';
+      document.getElementById('f-notes').value = c.notes || '';
+    } else {
+      ['f-name','f-vendor','f-start','f-end','f-value','f-notes'].forEach(id => document.getElementById(id).value = '');
+      document.getElementById('f-type').value = 'Sewa';
+      document.getElementById('f-assignee').value = currentUser ? currentUser.name.split(' ')[0] : '';
+    }
+    document.getElementById('formModal').classList.add('show');
+  }
+  function closeModal() {
+    document.getElementById('formModal').classList.remove('show');
+    editingId = null;
+  }
+
+  function openDetail(id) {
+    currentDetailId = id;
+    const c = contracts.find(x => x.id === id);
+    if (!c) return;
+    const days = daysUntil(c.end);
+    document.getElementById('d-name').textContent = c.name;
+    document.getElementById('d-vendor').textContent = c.vendor || '—';
+    document.getElementById('d-type').textContent = c.type;
+    document.getElementById('d-owner').textContent = c.assignee || '—';
+    document.getElementById('d-start').textContent = fmtDate(c.start);
+    document.getElementById('d-end').textContent = fmtDate(c.end);
+    document.getElementById('d-days').textContent = days < 0 ? `Expired ${Math.abs(days)}d ago` : `${days} days`;
+    document.getElementById('d-value').textContent = fmtIDR(c.value);
+    document.getElementById('d-notes').textContent = c.notes || '—';
+    document.getElementById('d-notes-section').style.display = c.notes ? 'block' : 'none';
+
+    let audit = '';
+    if (c.createdBy) audit += `Created by ${c.createdBy} on ${fmtDateTime(c.createdAt)}`;
+    if (c.updatedBy && c.updatedAt !== c.createdAt) audit += `<br>Last updated by ${c.updatedBy} on ${fmtDateTime(c.updatedAt)}`;
+    document.getElementById('d-audit').innerHTML = audit || '—';
+
+    document.getElementById('detailModal').classList.add('show');
+  }
+  function closeDetail() {
+    document.getElementById('detailModal').classList.remove('show');
+    currentDetailId = null;
+  }
+  function editFromDetail() {
+    const id = currentDetailId;
+    closeDetail();
+    setTimeout(() => openModal(id), 100);
+  }
+  function addToCalendarFromDetail() { addToCalendar(currentDetailId); }
+
+  // ========== SAVE / DELETE ==========
+  async function saveContract() {
+    const name = document.getElementById('f-name').value.trim();
+    const end = document.getElementById('f-end').value;
+    if (!name || !end) { toast('Name and end date are required'); return; }
+
+    const now = new Date().toISOString();
+    const data = {
+      name,
+      type: document.getElementById('f-type').value,
+      vendor: document.getElementById('f-vendor').value.trim(),
+      start: document.getElementById('f-start').value || '',
+      end,
+      value: parseInt(document.getElementById('f-value').value) || 0,
+      assignee: document.getElementById('f-assignee').value.trim() || (currentUser ? currentUser.name.split(' ')[0] : ''),
+      notes: document.getElementById('f-notes').value.trim(),
+      updatedAt: now,
+      updatedBy: currentUser ? currentUser.name : 'Unknown'
+    };
+
+    if (editingId) {
+      await saveContractToFirebase(data, editingId);
+      toast('Contract updated');
+    } else {
+      data.createdAt = now;
+      data.createdBy = currentUser ? currentUser.name : 'Unknown';
+      await saveContractToFirebase(data, null);
+      toast('Contract added');
+    }
+    closeModal();
+  }
+
+  async function deleteContract() {
+    if (!editingId) return;
+    if (!confirm('Delete this contract? This cannot be undone.')) return;
+    await deleteContractFromFirebase(editingId);
+    closeModal();
+    toast('Contract deleted');
+  }
+
+  // ========== CALENDAR ==========
+  function addToCalendar(id) {
+    const c = contracts.find(x => x.id === id);
+    if (!c) return;
+    const reminderDate = new Date(c.end);
+    reminderDate.setDate(reminderDate.getDate() - 30);
+    const start = reminderDate.toISOString().replace(/[-:]/g,'').split('.')[0] + 'Z';
+    const endTime = new Date(reminderDate.getTime() + 3600000).toISOString().replace(/[-:]/g,'').split('.')[0] + 'Z';
+    const title = encodeURIComponent(`⚠ Contract Expiring: ${c.name}`);
+    const details = encodeURIComponent(
+      `Contract: ${c.name}\nCounterparty: ${c.vendor || '—'}\nExpires: ${fmtDate(c.end)}\nValue: ${fmtIDR(c.value)}\nOwner: ${c.assignee || '—'}\n\n${c.notes || ''}`
+    );
+    const url = `https://www.google.com/calendar/render?action=TEMPLATE&text=${title}&details=${details}&dates=${start}/${endTime}`;
+    window.open(url, '_blank');
+    toast('Opening Google Calendar');
+  }
+
+  function exportAllToCalendar() {
+    document.getElementById('userMenu').classList.remove('show');
+    const upcoming = contracts.filter(c => { const d = daysUntil(c.end); return d > 0 && d <= 120; });
+    if (upcoming.length === 0) { toast('No upcoming contracts to export'); return; }
+    if (confirm(`Export ${upcoming.length} reminder${upcoming.length>1?'s':''} to Google Calendar? Tabs will open one by one.`)) {
+      upcoming.forEach((c, i) => setTimeout(() => addToCalendar(c.id), i * 500));
+    }
+  }
+
+  // ========== NOTIFICATIONS ==========
+  async function enableNotifications() {
+    if (!('Notification' in window)) { toast('Notifications not supported here'); return; }
+    if (Notification.permission === 'granted') {
+      toast('Already enabled');
+      document.getElementById('notifBanner').classList.add('hidden');
+      return;
+    }
+    try {
+      const perm = await Notification.requestPermission();
+      if (perm === 'granted') {
+        toast('Notifications enabled ✓');
+        document.getElementById('notifBanner').classList.add('hidden');
+        new Notification('GII-BOX is watching', {
+          body: "You'll be alerted 30 days before any contract expires.",
+          icon: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect fill="%238b2e2e" width="100" height="100" rx="20"/><text x="50" y="70" font-family="serif" font-size="60" fill="white" text-anchor="middle">G</text></svg>'
+        });
+        checkAndFireNotifications();
+      } else { toast('Permission denied'); }
+    } catch(e) { toast('Could not enable notifications'); }
+  }
+
+  function dismissNotifBanner() {
+    bannerDismissed = true;
+    lsSet('banner_dismissed', true);
+    document.getElementById('notifBanner').classList.add('hidden');
+  }
+
+  let lastNotifCheck = 0;
+  function checkAndFireNotifications() {
+    if (!('Notification' in window) || Notification.permission !== 'granted') return;
+    const now = Date.now();
+    if (now - lastNotifCheck < 5 * 60 * 1000) return;
+    lastNotifCheck = now;
+
+    contracts.forEach(c => {
+      const d = daysUntil(c.end);
+      const notifKey = `${c.id}_30`;
+      if (d <= 30 && d > 0 && !notifiedIds.has(notifKey)) {
+        try {
+          new Notification(`⚠ Contract expiring in ${d} day${d>1?'s':''}`, {
+            body: `${c.name}\n${c.vendor || ''} · Expires ${fmtDate(c.end)}`,
+            icon: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect fill="%23b03030" width="100" height="100" rx="20"/><text x="50" y="70" font-family="serif" font-size="60" fill="white" text-anchor="middle">!</text></svg>',
+            tag: notifKey
+          });
+          notifiedIds.add(notifKey);
+        } catch(e){}
+      }
+      if (d > 30 && notifiedIds.has(notifKey)) {
+        notifiedIds.delete(notifKey);
+      }
+    });
+    lsSet('notified', [...notifiedIds]);
+  }
+
+  function testNotification() {
+    document.getElementById('userMenu').classList.remove('show');
+    if (!('Notification' in window)) { toast('Not supported in this browser'); return; }
+    if (Notification.permission !== 'granted') { enableNotifications(); return; }
+    new Notification('🔔 GII-BOX Test', {
+      body: "Notifications are working. You'll see alerts like this when contracts are 30 days from expiring.",
+      icon: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect fill="%238b2e2e" width="100" height="100" rx="20"/><text x="50" y="70" font-family="serif" font-size="60" fill="white" text-anchor="middle">G</text></svg>'
+    });
+    toast('Test notification sent ✓');
+  }
+
+  function toast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2200);
+  }
+
+  // Expose to window
+  Object.assign(window, {
+    login, signOut, toggleUserMenu, filterChip, filterUrgency,
+    openModal, closeModal, openDetail, closeDetail, editFromDetail,
+    addToCalendarFromDetail, saveContract, deleteContract, addToCalendar,
+    exportAllToCalendar, enableNotifications, dismissNotifBanner, testNotification,
+    render
+  });
+
+  // ========== INIT ==========
+  function init() {
+    // Load user session & notif state from localStorage
+    currentUser = lsGet('user');
+    const notif = lsGet('notified');
+    if (notif) notifiedIds = new Set(notif);
+    bannerDismissed = lsGet('banner_dismissed') === true;
+
+    // Periodic notification check
+    setInterval(checkAndFireNotifications, 10 * 60 * 1000);
+
+    if (currentUser) showApp();
+    else document.getElementById('loginScreen').style.display = 'grid';
+  }
+
+  // Wait for firebase module to load
+  if (window.fb) init();
+  else window.addEventListener('firebase-ready', init);
+</script>
+
+</body>
+</html>
